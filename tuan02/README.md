@@ -1,60 +1,147 @@
-# Bài 1: So sánh hiệu năng: tìm phần tử chung giữa hai list
+# Tuần 02: Big-O và chọn cấu trúc dữ liệu
 
-## 1. Giới thiệu
 
-Báo cáo này so sánh hai cách tìm các phần tử chung của hai list trong Python: dùng vòng lặp lồng nhau (độ phức tạp O(n²)) và dùng `set` (độ phức tạp O(n) trung bình). Mục tiêu là cài đặt hai thuật toán, kiểm tra chúng cho kết quả giống nhau, rồi đo thời gian chạy bằng `timeit`.
+## Bài 1. Chẩn đoán và sửa Big-O
 
-## 2. Bài toán
+### 1. Đề bài
 
-Cho hai list số nguyên `list_a` và `list_b`, cần trả về các phần tử của `list_a` cũng xuất hiện trong `list_b`, giữ nguyên thứ tự xuất hiện trong `list_a`.
+Cho script tìm phần tử chung giữa hai danh sách 100.000 phần tử bằng hai vòng lặp lồng nhau (O(n²)). Viết lại bằng `set` để đạt O(n), dùng `timeit` đo cả hai và báo cáo số lần tăng tốc.
 
-## 3. Phương pháp thực hiện
+### 2. Phương pháp
 
-**Phương pháp 1: vòng lặp lồng nhau (`find_common_nested`).** Với mỗi phần tử của `list_a`, chương trình duyệt lần lượt `list_b` để tìm phần tử bằng nó. Nếu tìm thấy thì thêm vào kết quả và dừng bằng `break`. Độ phức tạp thời gian là O(n²). Vì dữ liệu có rất ít phần tử trùng, hầu hết phần tử của `list_a` không có trong `list_b` nên phải quét hết `list_b`, do đó `break` gần như không giúp giảm chi phí.
+**Bản gốc, `find_common_nested` (O(n²)).** Với mỗi phần tử của `list_a`, duyệt lần lượt `list_b` để tìm phần tử bằng nó, nếu thấy thì thêm vào kết quả và `break`.
 
-**Phương pháp 2: dùng `set` (`find_common_set`).** Chương trình chuyển `list_b` thành `set`, sau đó duyệt `list_a` và kiểm tra từng phần tử có nằm trong `set` hay không. Việc tra cứu trong `set` mất O(1) trung bình nên tổng thời gian là O(n). Đổi lại, phương pháp này tốn thêm O(n) bộ nhớ cho `set`, và các phần tử phải hashable. Thứ tự kết quả vẫn theo `list_a`, giống phương pháp 1.
+**Bản sửa, `find_common_set` (O(n)).** Chuyển `list_b` thành `set`, rồi duyệt `list_a` và kiểm tra từng phần tử có nằm trong `set` hay không.
 
-## 4. Thiết lập thí nghiệm
-
-Dữ liệu được sinh bằng `random.sample(range(SIZE * 2), SIZE)` với `SIZE = 100_000` và seed cố định là 42 để kết quả tái lập được. Tuy nhiên, ở 100.000 phần tử, phương pháp lồng nhau cần khoảng 10¹⁰ phép so sánh nên không thể chạy thực tế trên máy thông thường. Vì vậy phần benchmark chỉ dùng 1.000 phần tử đầu của mỗi list.
-
-Thời gian được đo bằng `timeit.Timer` với `number=1`. Trước khi đo, chương trình kiểm tra tính đúng đắn bằng cách chạy cả hai hàm trên 1.000 phần tử và dùng `assert` để xác nhận hai kết quả bằng nhau.
-
-## 5. Kết quả
-
-```
-=== KẾT QUẢ TIMEIT ===
-Kích thước dữ liệu thực tế: 100,000 phần tử/list
-Kích thước benchmark: 1,000 phần tử/list
-Nested loops O(n²): 0.035948 giây
-Set O(n):           0.000177 giây
-Speedup:             203.56 lần
+```python
+def find_common_set(list_a, list_b):
+    set_b = set(list_b)
+    return [item for item in list_a if item in set_b]
 ```
 
-Bài kiểm tra tính đúng đắn đã qua: hai phương pháp cho kết quả giống nhau. Ở n = 1.000, phương pháp lồng nhau mất khoảng 35,9 ms, trong khi phương pháp dùng `set` chỉ mất khoảng 0,177 ms. Như vậy `set` nhanh hơn khoảng 203,56 lần.
+**Vì sao Big-O giảm:** `set` là bảng băm nên kiểm tra một phần tử có mặt hay không chỉ mất O(1) trung bình thay vì phải quét cả list O(n), do đó n lần kiểm tra chỉ tốn O(n) thay vì O(n²).
 
-## 6. Phân tích
+### 3. Thiết lập thí nghiệm
 
-Kết quả phù hợp với lý thuyết. Vòng lặp lồng nhau có thời gian tăng theo bình phương kích thước dữ liệu, còn `set` chỉ tăng tuyến tính, nên khoảng cách giữa hai phương pháp càng lớn khi dữ liệu càng nhiều.
+- Dữ liệu: hai list n phần tử, lấy bằng `random.sample` từ `range(2n)` với seed cố định (42). Cách này cho khoảng n/2 phần tử chung, nên bài kiểm tra tính đúng đắn có ý nghĩa.
+- Kiểm tra đúng đắn: dùng `assert` so sánh kết quả hai hàm (kể cả thứ tự) ở n = 100, 1.000 và 3.000.
+- Đo thời gian bằng `timeit.repeat` và lấy giá trị nhỏ nhất: nested đo 3 lần (mỗi lần 1 lượt gọi), set đo 5 lần (mỗi lần 20 lượt gọi, lấy trung bình mỗi lượt).
+- Nested được đo ở n = 1.000 đến 8.000. Với n = 100.000, bản nested không chạy trực tiếp mà được ước tính bằng cách ngoại suy bậc hai từ n = 8.000. Bản `set` được đo trực tiếp ở n = 100.000.
 
-Nếu n tăng từ 1.000 lên 100.000 (gấp 100 lần), phương pháp lồng nhau sẽ chậm đi khoảng 10.000 lần, còn phương pháp `set` chỉ chậm đi khoảng 100 lần. Ngoại suy từ kết quả trên, thời gian ước tính ở 100.000 phần tử là khoảng 6 phút cho phương pháp lồng nhau và khoảng 0,018 giây cho phương pháp `set`, tức chênh lệch cỡ 20.000 lần. Lưu ý đây chỉ là ước tính, chưa được đo thực tế.
+### 4. Kết quả
 
-## 7. Hạn chế
+Kiểm tra tính đúng đắn:
 
-- Mỗi phương pháp chỉ được đo một lần (`number=1`). Hàm dùng `set` chạy dưới 1 ms nên số đo dễ bị nhiễu, vì vậy con số speedup 203,56 chỉ nên xem là tham khảo về bậc độ lớn.
-- Kết quả chỉ được đo ở một kích thước (n = 1.000), chưa đủ để xác nhận bằng thực nghiệm rằng thời gian tăng theo n² và n.
-- Bài kiểm tra tính đúng đắn còn yếu. Hai mẫu 1.000 phần tử lấy từ khoảng `range(200_000)` chỉ có khoảng 5 phần tử chung, nên `assert` kiểm tra được rất ít trường hợp.
-- Các số liệu cho n = 100.000 là ước tính, không phải kết quả đo trực tiếp.
-- Chưa ghi lại môi trường chạy (phiên bản Python, CPU, hệ điều hành). Thời gian tuyệt đối sẽ khác giữa các máy, nhưng tỉ lệ giữa hai phương pháp thì ổn định hơn.
+```
+[OK] n=  100: giống nhau, 52 phần tử chung
+[OK] n=1,000: giống nhau, 499 phần tử chung
+[OK] n=3,000: giống nhau, 1,514 phần tử chung
+```
 
-## 8. Hướng cải thiện
+Thời gian đo được:
 
-- Dùng `timeit.repeat` và lấy giá trị nhỏ nhất, hoặc tăng `number` cho hàm chạy nhanh.
-- Đo ở nhiều kích thước (ví dụ 500, 1.000, 2.000, 4.000) và vẽ biểu đồ thời gian theo n.
-- Lấy mẫu kiểm thử từ khoảng giá trị nhỏ hơn để có nhiều phần tử chung hơn.
-- Thêm các phương pháp khác để so sánh, ví dụ giao hai `set` (`set(a) & set(b)`), lưu ý cách này không giữ thứ tự.
+| n | nested (s) | set (s) | Tăng tốc |
+|---|---|---|---|
+| 1.000 | 0,035687 | 0,000091 | ×393 |
+| 2.000 | 0,150655 | 0,000301 | ×501 |
+| 4.000 | 0,588764 | 0,000578 | ×1.019 |
+| 8.000 | 2,537183 | 0,001430 | ×1.774 |
 
+Ở n = 100.000:
 
-## 9. Kết luận
+| Phương pháp | Thời gian | Ghi chú |
+|---|---|---|
+| set | 0,026926 s | đo trực tiếp, 50.034 phần tử chung |
+| nested | khoảng 396,4 s (≈ 6,6 phút) | ước tính, ngoại suy n² từ n = 8.000 |
+| Tăng tốc | khoảng ×14.723 | ước tính |
 
-Với cùng một bài toán, dùng `set` thay cho vòng lặp lồng nhau giúp nhanh hơn khoảng 200 lần ở n = 1.000, và khoảng cách còn tăng khi dữ liệu lớn hơn, đổi lại tốn thêm bộ nhớ. Khi cần kiểm tra sự tồn tại của phần tử nhiều lần trên dữ liệu lớn, nên ưu tiên cấu trúc dùng bảng băm như `set` hoặc `dict`.
+### 5. Phân tích
+
+- Với nested, mỗi lần n tăng gấp đôi thì thời gian tăng khoảng 4 lần (0,0357 → 0,1507 → 0,5888 → 2,5372 s, tỉ lệ lần lượt khoảng 4,2, 3,9 và 4,3). Đây là dấu hiệu thực nghiệm của O(n²).
+- Với set, thời gian tăng chậm hơn nhiều theo n (từ 0,000091 s lên 0,001430 s khi n tăng 8 lần), phù hợp với O(n).
+- Vì hai tốc độ tăng khác nhau, mức tăng tốc lớn dần theo n: ×393 ở n = 1.000, ×1.774 ở n = 8.000 và khoảng ×14.723 ở n = 100.000.
+- Cái giá của `set` là tốn thêm bộ nhớ O(n) và yêu cầu phần tử phải hashable.
+
+### 6. Hạn chế
+
+- Thời gian nested ở n = 100.000 là ước tính, chưa đo trực tiếp. Ngoại suy bậc hai có thể thấp hơn thực tế vì list lớn không còn nằm gọn trong bộ nhớ đệm CPU, nên số đo thật có thể lớn hơn 396,4 s.
+- Nested chỉ đo 3 lần ở mỗi kích thước nên vẫn có nhiễu; thời gian tuyệt đối phụ thuộc máy, còn tỉ lệ giữa hai phương pháp ổn định hơn.
+
+## Bài 2. Chọn đúng cấu trúc dữ liệu cho 3 tình huống
+
+### (a) Hàng đợi tác vụ xử lý theo thứ tự đến
+
+**Cấu trúc:** `collections.deque`
+
+```python
+from collections import deque
+
+queue = deque()
+queue.append("task1")        # enqueue: O(1)
+queue.append("task2")
+queue.append("task3")
+while queue:
+    task = queue.popleft()   # dequeue: O(1), vào trước ra trước (FIFO)
+    print("xử lý", task)
+```
+
+**Big-O thao tác chủ đạo:** `append` và `popleft` đều O(1).
+
+**Vì sao:** cần thêm ở một đầu và lấy ở đầu kia theo thứ tự FIFO nên chọn `deque`, vì `list.pop(0)` phải dịch chuyển toàn bộ phần tử nên mất O(n).
+
+### (b) Đếm 10 từ khóa xuất hiện nhiều nhất trong file log
+
+**Cấu trúc:** `dict` dưới dạng `collections.Counter`
+
+```python
+from collections import Counter
+
+def top_keywords(path, k=10):
+    counts = Counter()
+    with open(path, encoding="utf-8") as f:
+        for line in f:                    # đọc từng dòng, không nạp cả file vào RAM
+            counts.update(line.split())   # mỗi lần cộng 1: O(1) trung bình
+    return counts.most_common(k)          # O(M log k), M = số từ khác nhau
+```
+
+**Big-O thao tác chủ đạo:** đếm toàn bộ là O(N) với N là tổng số từ. Bước lấy top k là O(M log k), thường nhỏ hơn nhiều vì M ≤ N và k = 10.
+
+**Vì sao:** bài toán là ánh xạ từ khóa sang số lần xuất hiện nên chọn cấu trúc băm `dict`/`Counter`, vì mỗi lần cập nhật chỉ tốn O(1) thay vì phải tìm trong list mất O(n).
+
+### (c) Kiểm tra "user-id này đã xử lý chưa?" trên luồng dữ liệu lớn
+
+**Cấu trúc:** `set`
+
+```python
+processed = set()
+
+def handle(user_id):
+    if user_id in processed:      # kiểm tra tồn tại: O(1) trung bình
+        return False              # đã xử lý, bỏ qua
+    processed.add(user_id)        # thêm: O(1) trung bình
+    return True
+```
+
+**Big-O thao tác chủ đạo:** `in` và `add` đều O(1) trung bình (trường hợp xấu nhất O(n) khi va chạm băm, hiếm gặp). Bộ nhớ là O(số id đã thấy).
+
+**Vì sao:** chỉ cần trả lời có/không cho câu hỏi tồn tại, không cần thứ tự hay giá trị đi kèm, nên chọn `set`, vì `in` trên list phải quét O(n) mỗi lần và sẽ chậm dần theo luồng dữ liệu.
+
+**Lưu ý mở rộng:** nếu tập id quá lớn để vừa RAM, có thể dùng Bloom filter (chấp nhận một tỉ lệ nhỏ báo nhầm) hoặc kho ngoài như Redis.
+
+### Bảng tóm tắt
+
+| Tình huống | Cấu trúc | Thao tác chủ đạo | Big-O |
+|---|---|---|---|
+| (a) Hàng đợi FIFO | `deque` | `append` / `popleft` | O(1) |
+| (b) Top 10 từ khóa | `Counter` (dict) | đếm từng từ | O(N) tổng, O(1) mỗi lần cập nhật |
+| (c) Đã xử lý chưa? | `set` | `in` / `add` | O(1) trung bình |
+
+## Cách chạy
+
+Dự án dùng `uv` để quản lý môi trường. Từ thư mục gốc của dự án:
+
+```bash
+uv run python tuan02\src\tuan02\bai2_data_structures.py
+```
+
+Chỉ dùng thư viện chuẩn của Python, không cần cài thêm gói.
