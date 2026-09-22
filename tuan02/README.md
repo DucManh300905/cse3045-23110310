@@ -9,7 +9,9 @@ Cho script tìm phần tử chung giữa hai danh sách 100.000 phần tử bằ
 
 ### 2. Phương pháp
 
- `find_common_set` (O(n)).** Chuyển `list_b` thành `set`, rồi duyệt `list_a` và kiểm tra từng phần tử có nằm trong `set` hay không.
+**`find_common_nested` (O(n²)).** Với mỗi phần tử của `list_a`, duyệt lần lượt `list_b` để tìm phần tử bằng nó, nếu thấy thì thêm vào kết quả và `break`.
+
+**`find_common_set` (O(n)).** Chuyển `list_b` thành `set`, rồi duyệt `list_a` và kiểm tra từng phần tử có nằm trong `set` hay không.
 
 ```python
 def find_common_set(list_a, list_b):
